@@ -1,0 +1,130 @@
+/* =========================================================
+   VOXY — GLOBAL DESIGN TOKENS
+   Everything visual (colors, fonts, spacing, glass panels)
+   is defined here as CSS variables so every component
+   stays consistent. Change a value here, it updates everywhere.
+   ========================================================= */
+
+:root {
+  /* --- Background layers --- */
+  --bg: #0a0e1a;
+  --bg-elevated: #0f1526;
+  --bg-glow-a: #1e1b4b;
+  --bg-glow-b: #082f3f;
+
+  /* --- Glass panel surface --- */
+  --glass: rgba(255, 255, 255, 0.045);
+  --glass-hover: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* --- Text --- */
+  --text-primary: #eef2ff;
+  --text-secondary: #9aa5c9;
+  --text-muted: #5c6788;
+
+  /* --- Brand accent (Voxy's identity, not scam-related) --- */
+  --accent-indigo: #6366f1;
+  --accent-cyan: #22d3ee;
+
+  /* --- Risk tiers (semantic, used across the whole app) --- */
+  --risk-low: #34d399;
+  --risk-low-bg: rgba(52, 211, 153, 0.12);
+  --risk-suspicious: #f5b942;
+  --risk-suspicious-bg: rgba(245, 185, 66, 0.12);
+  --risk-high: #fb923c;
+  --risk-high-bg: rgba(251, 146, 60, 0.12);
+  --risk-critical: #f75c66;
+  --risk-critical-bg: rgba(247, 92, 102, 0.14);
+
+  /* --- Type --- */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* --- Shape --- */
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 10px;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  position: relative;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Visible keyboard focus everywhere, for accessibility */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* --- Reusable glass panel look, shared by every card in the app --- */
+.glass-panel {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* --- Ambient background glow, sits behind every page --- */
+.ambient-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 900px 600px at 15% -10%, var(--bg-glow-a) 0%, transparent 60%),
+    radial-gradient(ellipse 800px 700px at 100% 20%, var(--bg-glow-b) 0%, transparent 55%),
+    radial-gradient(ellipse 700px 500px at 50% 110%, rgba(99, 102, 241, 0.12) 0%, transparent 60%);
+  opacity: 0.9;
+}
