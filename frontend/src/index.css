@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+    /* compatibility tokens (dark) */
+    --background: 0.12 0.02 240;
+    --foreground: 0.95 0.01 240;
+    --card: 0.16 0.02 240;
+    --card-foreground: 0.95 0.01 240;
+    --popover: 0.16 0.02 240;
+    --popover-foreground: 0.95 0.01 240;
+    --primary: 0.82 0.13 200;
+    --primary-foreground: 0.12 0.02 240;
+    --secondary: 0.7 0.18 80;
+    --secondary-foreground: 0.12 0.02 240;
+    --accent: 0.82 0.16 280;
+    --accent-foreground: 0.95 0.01 240;
+    --highlight: 0.7 0.22 25;
+    --highlight-foreground: 1 0 0;
+    --muted: 0.2 0.02 240;
+    --muted-foreground: 0.62 0.02 240;
+    --destructive: 0.64 0.24 16;
+    --destructive-foreground: 1 0 0;
+    --border: 0.3 0.02 245;
+    --input: 0.3 0.02 245;
+    --ring: 0.82 0.13 200;
+  }
+}
+
+@layer base {
+  * {
+    border-color: oklch(var(--border));
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-ink text-slate-100 font-body antialiased;
+    background-image:
+      radial-gradient(60rem 60rem at 80% -10%, rgba(156, 122, 151, 0.14), transparent 60%),
+      radial-gradient(50rem 50rem at -10% 10%, rgba(139, 232, 203, 0.12), transparent 55%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: rgba(139, 232, 203, 0.3);
+    color: #fff;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .voxy-grid {
+    background-image:
+      linear-gradient(rgba(126, 162, 170, 0.22) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(126, 162, 170, 0.22) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 75%);
+  }
+  .voxy-card {
+    @apply bg-panel border border-line rounded-2xl;
+  }
+  .voxy-btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .voxy-btn-primary {
+    @apply voxy-btn bg-brand text-ink hover:shadow-glow;
+  }
+  .voxy-btn-ghost {
+    @apply voxy-btn border border-line bg-transparent text-slate-200 hover:bg-panel2;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(90deg, #8BE8CB, #888DA7 55%, #9C7A97);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+    background-size: 200% 100%;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #3E4644; border-radius: 9999px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+}
