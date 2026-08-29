@@ -1,22 +1,26 @@
 """
 Voxy Backend - Main API
-------------------------
-This is the "bridge" that connects all the AI modules together.
 
 Pipeline:
-    Audio Upload
-        -> Speech-to-Text        (ml/speech/transcriber.py)
-        -> Voice Risk Analysis   (ml/voice/voice_detector.py)
-        -> Scam Detection        (ml/scam/scam_detector.py)
-        -> Risk Calculation      (ml/scam/risk_engine.py)
-        -> Ledger                (backend/app/services/ledger.py)
-        -> JSON Result           -> Frontend
 
-IMPORTANT (beginner-friendly design):
-This file tries to import each teammate's real function. If a teammate's
-module isn't ready yet (or throws an error), we fall back to safe dummy
-data instead of crashing. That way the whole system keeps running even
-while pieces are still being built.
+Audio Upload
+    ↓
+Speech-to-Text
+    ↓
+Voice Risk Analysis
+    ↓
+Scam Detection
+    ↓
+Risk Calculation
+    ↓
+Ledger
+    ↓
+JSON Result
+    ↓
+Frontend
+
+Each module has a fallback so the backend can continue
+working during team integration.
 """
 
 import os
@@ -27,146 +31,438 @@ import tempfile
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-# ---------------------------------------------------------------------------
-# Make sure Python can find the "ml" folder, which lives one level above
-# backend/ at the project root:
+
+# ============================================================
+# PROJECT PATH
+# ============================================================
+
+# main.py is inside:
+# Voxy/backend/app/main.py
 #
-#   Voxy/
-#   ├── backend/app/main.py   <- we are here
-#   └── ml/...
-# ---------------------------------------------------------------------------
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+# Go up 2 levels:
+# app -> backend -> Voxy
+
+PROJECT_ROOT = os.path.abspath(
+    os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        ".."
+    )
+)
+
 if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+
+    sys.path.insert(
+        0,
+        PROJECT_ROOT
+    )
 
 
-app = FastAPI(title="Voxy Backend")
+# ============================================================
+# FASTAPI APP
+# ============================================================
 
-# Allow the frontend (running on a different port, e.g. localhost:5173/3000)
-# to call this backend during development.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+app = FastAPI(
+    title="Voxy Backend",
+    version="1.0.0"
 )
 
 
-# ---------------------------------------------------------------------------
-# STEP 2: basic health check route
-# ---------------------------------------------------------------------------
+# ============================================================
+# CORS
+# ============================================================
+
+app.add_middleware(
+    CORSMiddleware,
+
+    allow_origins=["*"],
+
+    allow_credentials=True,
+
+    allow_methods=["*"],
+
+    allow_headers=["*"]
+)
+
+
+# ============================================================
+# HEALTH CHECK
+# ============================================================
+
 @app.get("/")
 def read_root():
-    return {"status": "Voxy backend is running"}
+
+    return {
+        "status": "Voxy backend is running"
+    }
 
 
-# ---------------------------------------------------------------------------
-# Helpers that try to call each teammate's real function, and fall back to
-# safe dummy data if the module isn't ready yet or raises an error.
-# See "IF YOUR MODULE IS NOT READY" section of the team contract.
-# ---------------------------------------------------------------------------
+# ============================================================
+# TRANSCRIPTION MODULE
+# ============================================================
 
-def run_transcription(audio_path: str) -> dict:
+def run_transcription(audio_path: str):
+
     try:
-        from ml.speech.transcriber import transcribe_audio
-        return transcribe_audio(audio_path)
-    except Exception:
-        return {"transcript": "Demo transcript unavailable."}
 
-
-def run_voice_analysis(audio_path: str) -> dict:
-    try:
-        from ml.voice.voice_detector import analyze_voice
-        return analyze_voice(audio_path)
-    except Exception:
-        return {"voice_risk": 50, "prediction": "UNKNOWN"}
-
-
-def run_scam_analysis(transcript: str) -> dict:
-    try:
-        from ml.scam.scam_detector import analyze_scam
-        return analyze_scam(transcript)
-    except Exception:
-        return {"scam_risk": 0, "threats": []}
-
-
-def run_risk_engine(voice_result: dict, scam_result: dict) -> dict:
-    try:
-        from ml.scam.risk_engine import calculate_risk
-        return calculate_risk(voice_result, scam_result)
-    except Exception:
-        # Simple placeholder logic so the pipeline still returns something
-        # sensible if the real risk engine isn't ready yet.
-        overall = round(
-            (voice_result.get("voice_risk", 50) + scam_result.get("scam_risk", 0)) / 2
+        from ml.speech.transcriber import (
+            transcribe_audio
         )
-        if overall >= 80:
-            level = "CRITICAL"
-        elif overall >= 60:
-            level = "HIGH_RISK"
-        elif overall >= 30:
-            level = "SUSPICIOUS"
-        else:
-            level = "LOW"
+
+        return transcribe_audio(
+            audio_path
+        )
+
+    except Exception as error:
+
+        print(
+            "Transcription module error:",
+            error
+        )
+
         return {
-            "overall_risk": overall,
-            "risk_level": level,
-            "recommended_action": "Exercise caution.",
+            "transcript": "Demo transcript unavailable."
         }
 
 
-def run_ledger(final_result: dict) -> dict:
+# ============================================================
+# VOICE ANALYSIS MODULE
+# ============================================================
+
+def run_voice_analysis(audio_path: str):
+
+    try:
+
+        from ml.voice.voice_detector import analyze_voice
+
+        return analyze_voice(audio_path)
+
+    except Exception as error:
+
+        print(
+            "Voice analysis module error:",
+            error
+        )
+
+        return {
+            "voice_risk": 50,
+            "prediction": "UNKNOWN"
+        }
+
+
+# ============================================================
+# SCAM DETECTION MODULE
+# ============================================================
+
+def run_scam_analysis(transcript: str):
+
+    try:
+
+        from ml.scam.scam_detector import analyze_scam
+
+        return analyze_scam(transcript)
+
+    except Exception as error:
+
+        print(
+            "Scam detection module error:",
+            error
+        )
+
+        return {
+            "scam_risk": 0,
+            "threats": []
+        }
+
+
+# ============================================================
+# RISK ENGINE
+# ============================================================
+
+def run_risk_engine(
+    voice_result: dict,
+    scam_result: dict
+):
+
+    try:
+
+        from ml.scam.risk_engine import calculate_risk
+
+        return calculate_risk(
+            voice_result,
+            scam_result
+        )
+
+    except Exception as error:
+
+        print(
+            "Risk engine error:",
+            error
+        )
+
+        voice_risk = voice_result.get(
+            "voice_risk",
+            50
+        )
+
+        scam_risk = scam_result.get(
+            "scam_risk",
+            0
+        )
+
+        overall_risk = round(
+            (voice_risk + scam_risk) / 2
+        )
+
+        if overall_risk >= 80:
+
+            risk_level = "CRITICAL"
+
+            recommended_action = (
+                "End the call immediately and verify "
+                "the caller independently."
+            )
+
+        elif overall_risk >= 60:
+
+            risk_level = "HIGH_RISK"
+
+            recommended_action = (
+                "Do not send money or share "
+                "personal information."
+            )
+
+        elif overall_risk >= 30:
+
+            risk_level = "SUSPICIOUS"
+
+            recommended_action = (
+                "Exercise caution and verify the caller."
+            )
+
+        else:
+
+            risk_level = "LOW"
+
+            recommended_action = (
+                "No major scam indicators detected."
+            )
+
+        return {
+            "overall_risk": overall_risk,
+            "risk_level": risk_level,
+            "recommended_action": recommended_action
+        }
+
+
+# ============================================================
+# LEDGER MODULE
+# ============================================================
+
+def run_ledger(final_result: dict):
     try:
         from backend.app.services.ledger import record_scam_pattern
-        return record_scam_pattern(final_result)
-    except Exception:
-        return {"ledger_status": "Not Recorded"}
 
+        result = record_scam_pattern(final_result)
 
-# ---------------------------------------------------------------------------
-# STEP 3 + 4 + 5: the main /analyze endpoint
-# ---------------------------------------------------------------------------
-@app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
-    # Save the uploaded audio to a temporary file so teammates' functions
-    # (which expect a file path) can read it.
-    suffix = os.path.splitext(file.filename or "")[1] or ".wav"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        shutil.copyfileobj(file.file, tmp)
-        audio_path = tmp.name
+        print("LEDGER SUCCESS:", result)
 
-    try:
-        # 1. Speech-to-text
-        transcript_result = run_transcription(audio_path)
-        transcript = transcript_result.get("transcript", "")
+        return result
 
-        # 2. Voice authenticity
-        voice_result = run_voice_analysis(audio_path)
+    except Exception as error:
+        print("LEDGER ERROR:", repr(error))
 
-        # 3. Scam detection (on the transcript)
-        scam_result = run_scam_analysis(transcript)
-
-        # 4. Combine into an overall risk score
-        risk_result = run_risk_engine(voice_result, scam_result)
-
-        # Assemble the final response before recording it in the ledger
-        final_result = {
-            "transcript": transcript,
-            "voice_risk": voice_result.get("voice_risk", 50),
-            "scam_risk": scam_result.get("scam_risk", 0),
-            "overall_risk": risk_result.get("overall_risk", 50),
-            "risk_level": risk_result.get("risk_level", "SUSPICIOUS"),
-            "threats": scam_result.get("threats", []),
-            "recommended_action": risk_result.get("recommended_action", "Exercise caution."),
+        return {
+            "ledger_status": "Not Recorded"
         }
 
-        # 5. Record the result in the ledger
-        ledger_result = run_ledger(final_result)
-        final_result["ledger_status"] = ledger_result.get("ledger_status", "Not Recorded")
+
+# ============================================================
+# MAIN ANALYZE ENDPOINT
+# ============================================================
+
+@app.post("/analyze")
+
+async def analyze(
+    file: UploadFile = File(...)
+):
+
+    # Get original file extension.
+    suffix = os.path.splitext(
+        file.filename or ""
+    )[1]
+
+    # Default to WAV if extension is missing.
+    if not suffix:
+
+        suffix = ".wav"
+
+
+    # --------------------------------------------------------
+    # Save uploaded file temporarily.
+    # --------------------------------------------------------
+
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=suffix
+    ) as temporary_file:
+
+        shutil.copyfileobj(
+            file.file,
+            temporary_file
+        )
+
+        audio_path = temporary_file.name
+
+
+    try:
+
+        # ====================================================
+        # STEP 1: SPEECH TO TEXT
+        # ====================================================
+
+        transcription_result = run_transcription(
+            audio_path
+        )
+
+        transcript = transcription_result.get(
+            "transcript",
+            ""
+        )
+
+
+        # ====================================================
+        # STEP 2: VOICE ANALYSIS
+        # ====================================================
+
+        voice_result = run_voice_analysis(
+            audio_path
+        )
+
+
+        # ====================================================
+        # STEP 3: SCAM DETECTION
+        # ====================================================
+
+        scam_result = run_scam_analysis(
+            transcript
+        )
+
+
+        # ====================================================
+        # STEP 4: RISK CALCULATION
+        # ====================================================
+
+        risk_result = run_risk_engine(
+            voice_result,
+            scam_result
+        )
+
+
+        # ====================================================
+        # STEP 5: CREATE FINAL RESULT
+        # ====================================================
+
+        final_result = {
+
+            "transcript": transcript,
+
+            "voice_risk": voice_result.get(
+                "voice_risk",
+                50
+            ),
+
+            "scam_risk": scam_result.get(
+                "scam_risk",
+                0
+            ),
+
+            "overall_risk": risk_result.get(
+                "overall_risk",
+                50
+            ),
+
+            "risk_level": risk_result.get(
+                "risk_level",
+                "SUSPICIOUS"
+            ),
+
+            "threats": scam_result.get(
+                "threats",
+                []
+            ),
+
+            "recommended_action": risk_result.get(
+                "recommended_action",
+                "Exercise caution."
+            )
+        }
+
+
+        # ====================================================
+        # STEP 6: LEDGER
+        #
+        # Only suspicious or high-risk patterns are recorded.
+        # ====================================================
+
+        if final_result["overall_risk"] >= 60:
+
+            ledger_result = run_ledger(
+                final_result
+            )
+
+        else:
+
+            ledger_result = {
+
+                "ledger_status": "Not Recorded"
+            }
+
+
+        # Add ledger information.
+
+        final_result.update(
+            ledger_result
+        )
+
+
+        # ====================================================
+        # RETURN RESULT
+        # ====================================================
 
         return final_result
+
+
     finally:
-        # Clean up the temp audio file
+
+        # ----------------------------------------------------
+        # Delete temporary uploaded audio file.
+        # ----------------------------------------------------
+
         if os.path.exists(audio_path):
+
             os.remove(audio_path)
+
+
+# ============================================================
+# LEDGER VERIFICATION ENDPOINT
+# ============================================================
+@app.get("/ledger/verify")
+def verify_ledger_endpoint():
+
+    try:
+        from backend.app.services.ledger import verify_ledger
+
+        return verify_ledger()
+
+    except Exception as error:
+
+        print(
+            "Ledger verification error:",
+            error
+        )
+
+        return {
+            "valid": False,
+            "error": str(error)
+        }
