@@ -186,7 +186,7 @@ def run_risk_engine(
 
     try:
 
-        from ml.scam.risk_engine import calculate_risk
+        from ml.scam.scam_detector import calculate_risk
 
         return calculate_risk(
             voice_result,
@@ -283,7 +283,7 @@ def run_ledger(final_result: dict):
 
 @app.post("/analyze")
 
-async def analyze(
+def analyze(
     file: UploadFile = File(...)
 ):
 
@@ -321,9 +321,13 @@ async def analyze(
         # STEP 1: SPEECH TO TEXT
         # ====================================================
 
+        print("STEP 1: starting transcription...")
+
         transcription_result = run_transcription(
             audio_path
         )
+
+        print("STEP 1: done")
 
         transcript = transcription_result.get(
             "transcript",
@@ -335,28 +339,40 @@ async def analyze(
         # STEP 2: VOICE ANALYSIS
         # ====================================================
 
+        print("STEP 2: starting voice analysis...")
+
         voice_result = run_voice_analysis(
             audio_path
         )
+
+        print("STEP 2: done")
 
 
         # ====================================================
         # STEP 3: SCAM DETECTION
         # ====================================================
 
+        print("STEP 3: starting scam detection...")
+
         scam_result = run_scam_analysis(
             transcript
         )
+
+        print("STEP 3: done")
 
 
         # ====================================================
         # STEP 4: RISK CALCULATION
         # ====================================================
 
+        print("STEP 4: starting risk engine...")
+
         risk_result = run_risk_engine(
             voice_result,
             scam_result
         )
+
+        print("STEP 4: done")
 
 
         # ====================================================
@@ -405,6 +421,8 @@ async def analyze(
         # Only suspicious or high-risk patterns are recorded.
         # ====================================================
 
+        print("STEP 6: starting ledger...")
+
         if final_result["overall_risk"] >= 60:
 
             ledger_result = run_ledger(
@@ -418,6 +436,8 @@ async def analyze(
                 "ledger_status": "Not Recorded"
             }
 
+        print("STEP 6: done")
+
 
         # Add ledger information.
 
@@ -429,6 +449,8 @@ async def analyze(
         # ====================================================
         # RETURN RESULT
         # ====================================================
+
+        print("ALL STEPS DONE — returning result")
 
         return final_result
 
